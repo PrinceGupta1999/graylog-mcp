@@ -26,7 +26,7 @@ type GraylogConfig = {
   password: string;
 };
 
-function getGraylogConfig(): GraylogConfig {
+export function getGraylogConfig(): GraylogConfig {
   const { GRAYLOG_BASE_URL, GRAYLOG_USERNAME, GRAYLOG_PASSWORD } = process.env;
 
   if (!GRAYLOG_BASE_URL || !GRAYLOG_USERNAME || !GRAYLOG_PASSWORD) {
@@ -55,7 +55,7 @@ function withFields<T extends { fields?: string[] }>(payload: T): Record<string,
   });
 }
 
-async function graylogPost<T>(path: string, payload: Record<string, unknown>): Promise<T> {
+export async function graylogPost<T>(path: string, payload: Record<string, unknown>): Promise<T> {
   const config = getGraylogConfig();
   const normalizedPath = path.replace(/^\//, "");
   const url = new URL(normalizedPath, config.baseUrl);
@@ -72,6 +72,47 @@ async function graylogPost<T>(path: string, payload: Record<string, unknown>): P
       method: "POST",
       headers,
       body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    throw new Error(
+      `Failed to reach Graylog at ${url.toString()}: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => response.statusText);
+    throw new Error(`Graylog request failed (${response.status} ${response.statusText}): ${errorText}`);
+  }
+
+  return (await response.json()) as T;
+}
+
+export async function graylogGet<T>(path: string, params: Record<string, unknown>): Promise<T> {
+  const config = getGraylogConfig();
+  const normalizedPath = path.replace(/^\//, "");
+  const url = new URL(normalizedPath, config.baseUrl);
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null) continue;
+    const stringValue = Array.isArray(value)
+      ? value.join(",")
+      : typeof value === "boolean"
+      ? String(value)
+      : String(value);
+    url.searchParams.set(key, stringValue);
+  }
+
+  const headers = new Headers({
+    Authorization: `Basic ${Buffer.from(`${config.username}:${config.password}`).toString("base64")}`,
+    "X-Requested-By": "graylog-mcp",
+    Accept: "application/json",
+  });
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: "GET",
+      headers,
     });
   } catch (error) {
     throw new Error(
@@ -162,7 +203,7 @@ server.registerTool(
   {
     title: "Search Relative Logs",
     description: "Search Graylog messages within a relative timeframe (seconds) counted back from now.",
-    inputSchema: relativeSearchInputDefinition,
+    inputSchema: relativeSearchInputSchema.shape,
   },
   async (input: RelativeSearchInput) => {
     try {
@@ -171,7 +212,7 @@ server.registerTool(
         limit: input.limit ?? 150,
       });
 
-      const data = await graylogPost<GraylogSearchResponse>("api/search/universal/relative", payload);
+      const data = await graylogGet<GraylogSearchResponse>("api/search/universal/relative", payload);
 
       return {
         content: [
@@ -210,7 +251,7 @@ server.registerTool(
         offset: input.offset ?? 0,
       });
 
-      const data = await graylogPost<GraylogSearchResponse>("api/search/universal/relative", payload);
+      const data = await graylogGet<GraylogSearchResponse>("api/search/universal/relative", payload);
 
       return {
         content: [
@@ -256,7 +297,7 @@ server.registerTool(
         limit: input.limit ?? 150,
       });
 
-      const data = await graylogPost<GraylogSearchResponse>("api/search/universal/absolute", payload);
+      const data = await graylogGet<GraylogSearchResponse>("api/search/universal/absolute", payload);
 
       return {
         content: [
@@ -295,7 +336,7 @@ server.registerTool(
         offset: input.offset ?? 0,
       });
 
-      const data = await graylogPost<GraylogSearchResponse>("api/search/universal/absolute", payload);
+      const data = await graylogGet<GraylogSearchResponse>("api/search/universal/absolute", payload);
 
       return {
         content: [

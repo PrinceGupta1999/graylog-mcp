@@ -33,6 +33,19 @@ package_name=$(bun run show-package-name)
 npx @modelcontextprotocol/inspector dist/$package_name
 ```
 
+### Verify Graylog universal search endpoints
+
+Set required environment variables and run the verifier script. It checks that GET `universal/relative` and `universal/absolute` return HTTP 200 and expected JSON shape.
+
+```bash
+export GRAYLOG_BASE_URL="https://your-graylog.example/"
+export GRAYLOG_USERNAME="your-user"
+export GRAYLOG_PASSWORD="your-password"
+
+# Run verification (Bun executes TypeScript directly)
+bun run test:graylog
+```
+
 ## Install
 
 ```bash
