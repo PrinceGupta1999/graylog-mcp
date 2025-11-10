@@ -1,9 +1,11 @@
+#!/usr/bin/env node
+
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 
 const server = new McpServer({
-  name: "GraylogMcpServer",
+  name: "graylog-mcp",
   version: "1.0.0",
 });
 
@@ -53,38 +55,6 @@ function withFields<T extends { fields?: string[] }>(payload: T): Record<string,
     ...rest,
     ...(fields && fields.length > 0 ? { fields: fields.join(",") } : {}),
   });
-}
-
-export async function graylogPost<T>(path: string, payload: Record<string, unknown>): Promise<T> {
-  const config = getGraylogConfig();
-  const normalizedPath = path.replace(/^\//, "");
-  const url = new URL(normalizedPath, config.baseUrl);
-  const headers = new Headers({
-    Authorization: `Basic ${Buffer.from(`${config.username}:${config.password}`).toString("base64")}`,
-    "Content-Type": "application/json",
-    "X-Requested-By": "graylog-mcp",
-  });
-
-  let response: Response;
-
-  try {
-    response = await fetch(url, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload),
-    });
-  } catch (error) {
-    throw new Error(
-      `Failed to reach Graylog at ${url.toString()}: ${error instanceof Error ? error.message : String(error)}`
-    );
-  }
-
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => response.statusText);
-    throw new Error(`Graylog request failed (${response.status} ${response.statusText}): ${errorText}`);
-  }
-
-  return (await response.json()) as T;
 }
 
 export async function graylogGet<T>(path: string, params: Record<string, unknown>): Promise<T> {
@@ -137,6 +107,7 @@ const relativeSearchInputDefinition = {
     .positive()
     .max(1000)
     .optional()
+    .default(150)
     .describe("Maximum number of messages to return (default 150)."),
   offset: z.number().int().min(0).optional().describe("Pagination offset for the result set."),
   sort: z.string().optional().describe("Sort expression, e.g., 'timestamp:desc'."),
@@ -168,6 +139,7 @@ const absoluteSearchInputDefinition = {
     .int()
     .positive()
     .max(1000)
+    .default(150)
     .optional()
     .describe("Maximum number of messages to return (default 150)."),
   offset: z.number().int().min(0).optional().describe("Pagination offset for the result set."),
@@ -209,7 +181,7 @@ server.registerTool(
     try {
       const payload = withFields({
         ...input,
-        limit: input.limit ?? 150,
+        limit: input.limit,
       });
 
       const data = await graylogGet<GraylogSearchResponse>("api/search/universal/relative", payload);
@@ -294,7 +266,7 @@ server.registerTool(
     try {
       const payload = withFields({
         ...input,
-        limit: input.limit ?? 150,
+        limit: input.limit,
       });
 
       const data = await graylogGet<GraylogSearchResponse>("api/search/universal/absolute", payload);
@@ -371,6 +343,7 @@ server.registerTool(
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
+  console.log("Graylog MCP server started");
 }
 
 if (import.meta.main) {

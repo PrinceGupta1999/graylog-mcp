@@ -1,41 +1,102 @@
-# Template for Bun MCP Server
+## Graylog MCP Server
 
-## Usage
+### Introduction
 
-## Create a new project
+The Graylog MCP Server lets AI IDEs and agents securely query your Graylog instance via the Model Context Protocol. It exposes standardized tools so assistants can search recent or absolute time windows and optionally count results without pulling full payloads.
+
+What you get:
+
+- search tools for Graylog universal search
+  - relative window: last N seconds
+  - absolute window: explicit ISO timestamps
+  - count-only variants for lightweight analytics
+- drop-in configuration for popular IDEs and MCP tools
+
+Requirements:
+
+- a reachable Graylog URL
+- credentials with permissions to use Universal Search
+
+Links:
+
+- Model Context Protocol: https://modelcontextprotocol.io
+- Graylog: https://www.graylog.org/
+
+---
+
+### Installation and Usage
+
+Quick start (runs the MCP server over stdio):
 
 ```bash
-bun create github.com/dotneet/bun-mcp-server new_project_name
-cd new_project_name
+npx -y graylog-mcp
 ```
 
-## Implement MCP server
+Required environment variables:
 
-Use [Claude Code](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview) or any other tools you prefer.
+- GRAYLOG_BASE_URL: your Graylog base URL (e.g., https://graylog.example/)
+- GRAYLOG_USERNAME: Graylog username
+- GRAYLOG_PASSWORD: Graylog password
+
+Set them inline or via your shell profile before starting the server.
+
+Example:
 
 ```bash
-# Edit spec.txt to describe what you want
-vim spec.txt
-claude "Read spec.txt and implement an MCP Server according to the specifications."
+export GRAYLOG_BASE_URL="https://your-graylog.example/"
+export GRAYLOG_USERNAME="your-user"
+export GRAYLOG_PASSWORD="your-password"
+npx -y graylog-mcp
 ```
 
-## Build the server
+Configure:
+
+```json
+{
+  "graylog": {
+    "command": "npx -y graylog-mcp",
+    "env": {
+      "GRAYLOG_BASE_URL": "https://YOUR_GRAYLOG_INSTANCE_URL/",
+      "GRAYLOG_USERNAME": "YOUR_USERNAME",
+      "GRAYLOG_PASSWORD": "YOUR_PASSWORD"
+    }
+  }
+}
+```
+
+Security notes:
+
+- Prefer scoped, least-privilege Graylog credentials.
+- Do not commit secrets to source control; use environment managers where possible.
+
+---
+
+### Contribution and Local Development
+
+Prerequisites:
+
+- Bun: https://bun.sh/
+- Node-compatible environment
+
+Install and build:
 
 ```bash
+# Install deps (if any) and build
+bun install
 bun run build
 ```
 
-## Testing and Debugging
+Run locally (TypeScript directly via Bun stdio):
 
 ```bash
-# You can use [inspector](https://github.com/modelcontextprotocol/inspector) for testing and debugging.
-package_name=$(bun run show-package-name)
-npx @modelcontextprotocol/inspector dist/$package_name
+# Start the MCP server from source
+export GRAYLOG_BASE_URL="https://your-graylog.example/"
+export GRAYLOG_USERNAME="your-user"
+export GRAYLOG_PASSWORD="your-password"
+bun index.ts
 ```
 
-### Verify Graylog universal search endpoints
-
-Set required environment variables and run the verifier script. It checks that GET `universal/relative` and `universal/absolute` return HTTP 200 and expected JSON shape.
+Test against a live Graylog (verifies universal search endpoints):
 
 ```bash
 export GRAYLOG_BASE_URL="https://your-graylog.example/"
@@ -46,9 +107,20 @@ export GRAYLOG_PASSWORD="your-password"
 bun run test:graylog
 ```
 
-## Install
+Project scripts:
+
+- build: `bun run build` → emits `dist/index.js`
+- test: `bun run test:graylog` → health checks for relative/absolute universal search
+- show-package-name: prints the package name
+
+Debug with MCP Inspector against local source:
 
 ```bash
-# Install the command to $HOME/bin or your preferred path
-cp dist/$package_name $HOME/bin/
+npx -y @modelcontextprotocol/inspector "bun index.ts"
 ```
+
+Code style and contributions:
+
+- Keep code readable and well-typed; avoid unnecessary complexity.
+- Match existing formatting; keep lines reasonably wrapped.
+- Open issues/PRs with clear reproduction steps or proposed changes.

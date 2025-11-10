@@ -4,10 +4,19 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "mkdir -p dist && bun build --compile --outfile=dist/$npm_package_name index.ts",
+    "build": "mkdir -p dist && bun build --target=node --outfile=dist/index.js index.ts && chmod +x dist/index.js",
     "show-package-name": "echo $npm_package_name",
-    "test:graylog": "bun run scripts/test-graylog.ts"
+    "test:graylog": "bun run scripts/test-graylog.ts",
+    "prepublishOnly": "bun run build"
   },
+  "bin": {
+    "graylog-mcp": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "devDependencies": {
     "@types/bun": "latest"
   },
