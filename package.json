@@ -1,9 +1,9 @@
 {
   "name": "graylog-mcp",
-  "version": "0.0.0-rc.1",
+  "description": "MCP server for querying Graylog logs via Model Context Protocol. Enables AI assistants to search and analyze Graylog messages through standardized tools.",
+  "version": "0.1.0",
   "module": "index.ts",
   "type": "module",
-  "private": true,
   "scripts": {
     "build": "mkdir -p dist && bun build --target=node --outfile=dist/index.js index.ts && chmod +x dist/index.js",
     "show-package-name": "echo $npm_package_name",
@@ -11,7 +11,7 @@
     "prepublishOnly": "bun run build"
   },
   "bin": {
-    "graylog-mcp": "./dist/index.js"
+    "graylog-mcp": "dist/index.js"
   },
   "files": [
     "dist",
@@ -29,6 +29,26 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/PrinceGupta1999/graylog-mcp"
+    "url": "git+https://github.com/PrinceGupta1999/graylog-mcp.git"
+  },
+  "keywords": [
+    "graylog",
+    "mcp",
+    "model context protocol",
+    "graylog mcp"
+  ],
+  "author": "Prince Gupta",
+  "license": "MIT",
+  "homepage": "https://github.com/PrinceGupta1999/graylog-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/PrinceGupta1999/graylog-mcp/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "engines": {
+    "bun": ">=1.0.0",
+    "node": ">=18.0.0"
   }
 }
