@@ -38,18 +38,7 @@ Required environment variables:
 - GRAYLOG_USERNAME: Graylog username
 - GRAYLOG_PASSWORD: Graylog password
 
-Set them inline or via your shell profile before starting the server.
-
-Example:
-
-```bash
-export GRAYLOG_BASE_URL="https://your-graylog.example/"
-export GRAYLOG_USERNAME="your-user"
-export GRAYLOG_PASSWORD="your-password"
-npx -y graylog-mcp
-```
-
-Configure:
+Configure in your IDE or Agentic Tool of choice (Cursor, VS Code, Claude Code):
 
 ```json
 {
@@ -62,6 +51,20 @@ Configure:
     }
   }
 }
+```
+
+#### Sample Usage Prompts
+
+Some sample prompts to make the most of the MCP server:
+
+**Analyzing error patterns**
+
+```txt
+search graylog for the errors in the past 24 hours with log_level:ERROR with a max limit of 100 per query
+
+use the message patterns in the query results to figure out the patterns of errors that are occuring and put them in ERRORS.md
+
+for subsequent queries, use the NOT condition to filter out messages with error patterns that are already discovered
 ```
 
 Security notes:
