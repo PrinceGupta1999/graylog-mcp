@@ -26,5 +26,9 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.20.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PrinceGupta1999/graylog-mcp"
   }
 }
