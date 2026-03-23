@@ -3,10 +3,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import { version } from "./package.json";
 
 const server = new McpServer({
   name: "graylog-mcp",
-  version: "1.0.0",
+  version: version,
 });
 
 interface GraylogSearchMessageEntry {
@@ -343,7 +344,6 @@ server.registerTool(
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.log("Graylog MCP server started");
 }
 
 if (import.meta.main) {

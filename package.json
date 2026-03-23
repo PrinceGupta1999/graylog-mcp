@@ -1,7 +1,7 @@
 {
   "name": "graylog-mcp",
   "description": "MCP server for querying Graylog logs via Model Context Protocol. Enables AI assistants to search and analyze Graylog messages through standardized tools.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "module": "index.ts",
   "type": "module",
   "scripts": {
