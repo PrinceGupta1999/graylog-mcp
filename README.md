@@ -35,10 +35,27 @@ npx -y graylog-mcp
 Required environment variables:
 
 - GRAYLOG_BASE_URL: your Graylog base URL (e.g., https://graylog.example/)
-- GRAYLOG_USERNAME: Graylog username
-- GRAYLOG_PASSWORD: Graylog password
+- exactly one authentication mode:
+  - access-token auth: GRAYLOG_TOKEN (or GRAYLOG_ACCESS_TOKEN)
+  - username/password auth: GRAYLOG_USERNAME and GRAYLOG_PASSWORD
 
-Configure in your IDE or Agentic Tool of choice (Cursor, VS Code, Claude Code):
+Both authentication modes are supported. Access-token auth uses Graylog's REST API convention: the token is sent with HTTP Basic auth as `YourToken:token`.
+
+Access-token auth example:
+
+```json
+{
+  "graylog": {
+    "command": "npx -y graylog-mcp",
+    "env": {
+      "GRAYLOG_BASE_URL": "https://YOUR_GRAYLOG_INSTANCE_URL/",
+      "GRAYLOG_TOKEN": "YOUR_GRAYLOG_ACCESS_TOKEN"
+    }
+  }
+}
+```
+
+Username/password auth example:
 
 ```json
 {
@@ -94,8 +111,14 @@ Run locally (TypeScript directly via Bun stdio):
 ```bash
 # Start the MCP server from source
 export GRAYLOG_BASE_URL="https://your-graylog.example/"
-export GRAYLOG_USERNAME="your-user"
-export GRAYLOG_PASSWORD="your-password"
+
+# Use access-token auth
+export GRAYLOG_TOKEN="your-access-token"
+
+# Or use username/password auth instead
+# export GRAYLOG_USERNAME="your-user"
+# export GRAYLOG_PASSWORD="your-password"
+
 bun index.ts
 ```
 
@@ -103,8 +126,13 @@ Test against a live Graylog (verifies universal search endpoints):
 
 ```bash
 export GRAYLOG_BASE_URL="https://your-graylog.example/"
-export GRAYLOG_USERNAME="your-user"
-export GRAYLOG_PASSWORD="your-password"
+
+# Use access-token auth
+export GRAYLOG_TOKEN="your-access-token"
+
+# Or use username/password auth instead
+# export GRAYLOG_USERNAME="your-user"
+# export GRAYLOG_PASSWORD="your-password"
 
 # Run verification (Bun executes TypeScript directly)
 bun run test:graylog

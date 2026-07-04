@@ -3,11 +3,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { version } from "./package.json";
+import packageJson from "./package.json" with { type: "json" };
 
 const server = new McpServer({
   name: "graylog-mcp",
-  version: version,
+  version: packageJson.version,
 });
 
 interface GraylogSearchMessageEntry {
@@ -23,26 +23,59 @@ interface GraylogSearchResponse {
   messages: GraylogSearchMessageEntry[];
 }
 
+type GraylogAuthConfig =
+  | {
+      type: "token";
+      token: string;
+    }
+  | {
+      type: "basic";
+      username: string;
+      password: string;
+    };
+
 type GraylogConfig = {
   baseUrl: string;
-  username: string;
-  password: string;
+  auth: GraylogAuthConfig;
 };
 
 export function getGraylogConfig(): GraylogConfig {
-  const { GRAYLOG_BASE_URL, GRAYLOG_USERNAME, GRAYLOG_PASSWORD } = process.env;
+  const { GRAYLOG_ACCESS_TOKEN, GRAYLOG_BASE_URL, GRAYLOG_PASSWORD, GRAYLOG_TOKEN, GRAYLOG_USERNAME } = process.env;
+  const accessToken = GRAYLOG_TOKEN || GRAYLOG_ACCESS_TOKEN;
+  const hasBasicAuth = Boolean(GRAYLOG_USERNAME && GRAYLOG_PASSWORD);
 
-  if (!GRAYLOG_BASE_URL || !GRAYLOG_USERNAME || !GRAYLOG_PASSWORD) {
+  if (!GRAYLOG_BASE_URL || (!accessToken && !hasBasicAuth)) {
     throw new Error(
-      "Missing Graylog configuration. Please set GRAYLOG_BASE_URL, GRAYLOG_USERNAME, and GRAYLOG_PASSWORD environment variables."
+      "Missing Graylog configuration. Please set GRAYLOG_BASE_URL and either GRAYLOG_TOKEN/GRAYLOG_ACCESS_TOKEN or both GRAYLOG_USERNAME and GRAYLOG_PASSWORD environment variables."
+    );
+  }
+
+  if (accessToken && hasBasicAuth) {
+    throw new Error(
+      "Ambiguous Graylog authentication. Please configure either GRAYLOG_TOKEN/GRAYLOG_ACCESS_TOKEN or GRAYLOG_USERNAME and GRAYLOG_PASSWORD, not both."
     );
   }
 
   return {
     baseUrl: GRAYLOG_BASE_URL.endsWith("/") ? GRAYLOG_BASE_URL : `${GRAYLOG_BASE_URL}/`,
-    username: GRAYLOG_USERNAME,
-    password: GRAYLOG_PASSWORD,
+    auth: accessToken
+      ? {
+          type: "token",
+          token: accessToken,
+        }
+      : {
+          type: "basic",
+          username: GRAYLOG_USERNAME!,
+          password: GRAYLOG_PASSWORD!,
+        },
   };
+}
+
+export function getGraylogAuthorizationHeader(config: GraylogConfig = getGraylogConfig()): string {
+  const credentials =
+    config.auth.type === "token" ? `${config.auth.token}:token` : `${config.auth.username}:${config.auth.password}`;
+
+  return `Basic ${Buffer.from(credentials).toString("base64")}`;
 }
 
 function cleanPayload(payload: Record<string, unknown>): Record<string, unknown> {
@@ -74,7 +107,7 @@ export async function graylogGet<T>(path: string, params: Record<string, unknown
   }
 
   const headers = new Headers({
-    Authorization: `Basic ${Buffer.from(`${config.username}:${config.password}`).toString("base64")}`,
+    Authorization: getGraylogAuthorizationHeader(config),
     "X-Requested-By": "graylog-mcp",
     Accept: "application/json",
   });
