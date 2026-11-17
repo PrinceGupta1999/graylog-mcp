@@ -12,6 +12,8 @@ What you get:
   - count-only variants for lightweight analytics
 - drop-in configuration for popular IDEs and MCP tools
 
+Why count first: a broad log query can match thousands of messages. The count-only tools let an agent see how many match and narrow the query before it pulls any of them into its context.
+
 Requirements:
 
 - a reachable Graylog URL
